@@ -8,11 +8,30 @@
     <title>投票</title>
     <link href="https://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        .logo {
+            margin-top: 10px;
+        }
+        .logo img {
+            width: 120px;
+            margin-right: 20px;
+        }
+        .name {
+            margin-top: 40px;
+        }
+        .tip {
+            margin-top: 10px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="logo">
+            <div class="img logo_rotate">
+                <img src="img/nebula-logo.png" alt="">
+                <img src="img/logo.png" alt="">
+            </div>
+        </div>
         <h1 class="name">投票</h1>
         <p class="noExtension hide" id="noExtension">
             提醒: Please install <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a>  to vote
@@ -26,8 +45,7 @@
             </form>
             <a href="#" class="btn btn-large btn-primary" id="submit">提交</a>
         </div>
-        <!-- <p>提交记录</p>
-        <p></p> -->
+        <p class="tip text-warning hide">已经提交</p>
     </div>
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
@@ -54,13 +72,13 @@
         }
         $("#list").html(htmlStr);
 
-        $(".radio").attr("disabled", true)
+        $(".radio-input").attr("disabled", true)
         $("#submit").addClass("disabled");
 
         if(typeof(webExtensionWallet) === "undefined"){
             $("#noExtension").removeClass("hide")
         }else{
-            $(".radio").attr("disabled",false);
+            $(".radio-input").attr("disabled",false);
             $("#submit").removeClass("disabled");
         }
 
@@ -68,7 +86,12 @@
 
         // 搜索功能: 查找Super-Dictionary 中有没有该词条
         $("#submit").click(function(){
-            if ($("#submit").hasClass('disabled')) return;
+            if ($("#submit").hasClass('disabled')) {
+                if (!$(".tip").hasClass("hide")) {
+                    alert("你已经投票")
+                }
+                return;
+            }
             var val = $('input[name="optionsRadios"]:checked').val();
             if (val === undefined) {
                 alert('请选择');
@@ -99,24 +122,27 @@
             if (result === 'null'){
             } else {
                 try {
-                    result = JSON.parse(result);
-                    console.log(result);
+                    result = JSON.parse(result);  
                 } catch (err) {
-                    alert("已经提交过")
+                    // alert("已经提交过")
                 }
             }
         }
 
-        // getVoteRecord();
+        getVoteRecord();
         function getVoteRecord() {
             var to = dappAddress;
             var value = "0";
             var callFunction = "get";
             var callArgs = "[]";
-
-            nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+            
+            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
                 listener: cbGet
             });
+
+            // nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+            //     listener: cbGet
+            // });
         }
 
         function cbGet(resp) {
@@ -127,25 +153,33 @@
             } else {
                 try {
                     result = JSON.parse(result);
-                    console.log(result);
+                    for (var i=0; i<$('.radio-input').length; i++) {
+                        if ($('.radio-input').eq(i).val() == result.choice) {
+                            $('.radio-input').eq(i).attr('checked', true);
+                            $(".radio-input").attr("disabled",false);
+                            $("#submit").addClass("disabled");
+                            $(".tip").removeClass("hide");
+                            break;
+                        }
+                    }
                 } catch (err) {
                     console.log(err);
                 }
             }
         }
         
-        getAccountState("n1Yf3kX9bUbUL3yef2TZxVgghtfPKPuny2B");
-        function getAccountState(address) {
-            neb.api.getAccountState(address)
-            .then(function (resp) {
-                console.log('response', resp);
-                var nas = Unit.fromBasic(resp.balance, "nas").toNumber();
-            })
-            .catch(function (e) {
-                // this catches e thrown by nebulas.js!neb
-                console.log(e);
-            });
-        }
+        // getAccountState("n1Yf3kX9bUbUL3yef2TZxVgghtfPKPuny2B");
+        // function getAccountState(address) {
+        //     neb.api.getAccountState(address)
+        //     .then(function (resp) {
+        //         console.log('response', resp);
+        //         var nas = Unit.fromBasic(resp.balance, "nas").toNumber();
+        //     })
+        //     .catch(function (e) {
+        //         // this catches e thrown by nebulas.js!neb
+        //         console.log(e);
+        //     });
+        // }
 
         // function getVoteRecord() {
         //     neb.api
