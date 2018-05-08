@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>投票</title>
+    <link href="https://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="name">投票</h1>
+        <p class="noExtension hide" id="noExtension">
+            提醒: Please install <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a>  to vote
+        </p>
+        <div>
+            <form>
+                <fieldset>
+                    <legend>请投票选举下一届总统：</legend>
+                    <div id="list"></div>
+                </fieldset>
+            </form>
+            <a href="#" class="btn btn-large btn-primary" id="submit">提交</a>
+        </div>
+        <!-- <p>提交记录</p>
+        <p></p> -->
+    </div>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src=lib/nebPay.js></script>
+    <script src=lib/nebulas.js></script>
+    <script>
+        var NebPay = require("nebpay");     //https://github.com/nebulasio/nebPay
+        var nebPay = new NebPay();
+        var nebulas = require("nebulas"),
+            Account = nebulas.Account,
+            Utils = nebulas.Utils,
+            neb = new nebulas.Neb();
+        neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io/"));
+
+        var lists = [
+            {value: '1', description: '奥巴马'},
+            {value: '2', description: '克林顿'},
+            {value: '3', description: '特朗普'},
+        ];
+        var htmlStr = '';
+        for (var i=0; i<lists.length; i++) {
+            htmlStr += ('<label class="radio"><input type="radio" name="optionsRadios" id="optionsRadios1" class="radio-input" value="' + lists[i].value + 
+                '">' + lists[i].description + '</label>');
+        }
+        $("#list").html(htmlStr);
+
+        $(".radio").attr("disabled", true)
+        $("#submit").addClass("disabled");
+
+        if(typeof(webExtensionWallet) === "undefined"){
+            $("#noExtension").removeClass("hide")
+        }else{
+            $(".radio").attr("disabled",false);
+            $("#submit").removeClass("disabled");
+        }
+
+        var dappAddress = "n1gCQWdnnDuUjeqJ1XeqnJCkUYwjZ1w6F9N";
+
+        // 搜索功能: 查找Super-Dictionary 中有没有该词条
+        $("#submit").click(function(){
+            if ($("#submit").hasClass('disabled')) return;
+            var val = $('input[name="optionsRadios"]:checked').val();
+            if (val === undefined) {
+                alert('请选择');
+                return;
+            }
+            var description;
+            for (var i=0; i<lists.length; i++) {
+                if (lists[i].value == val) {
+                    description = lists[i].description;
+                }
+            }
+            var to = dappAddress;
+            var value = "0";
+            var callFunction = "vote";
+            var callArgs = "[\"" + val + "\", \"" + description + "\"]"; 
+            // nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
+            //     listener: cbSearch      //指定回调函数
+            // });
+            nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
+                listener: cbVote      //指定回调函数
+            });
+        })
+
+        //return of search,
+        function cbVote(resp) {
+            var result = resp.result
+            console.log("return of rpc call: " + JSON.stringify(result))
+            if (result === 'null'){
+            } else {
+                try {
+                    result = JSON.parse(result);
+                    console.log(result);
+                } catch (err) {
+                    alert("已经提交过")
+                }
+            }
+        }
+
+        // getVoteRecord();
+        function getVoteRecord() {
+            var to = dappAddress;
+            var value = "0";
+            var callFunction = "get";
+            var callArgs = "[]";
+
+            nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+                listener: cbGet
+            });
+        }
+
+        function cbGet(resp) {
+            console.log(resp);
+            var result = resp.result
+            console.log("return of rpc call: " + JSON.stringify(result))
+            if (result === 'null'){
+            } else {
+                try {
+                    result = JSON.parse(result);
+                    console.log(result);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+        }
+        
+        getAccountState("n1Yf3kX9bUbUL3yef2TZxVgghtfPKPuny2B");
+        function getAccountState(address) {
+            neb.api.getAccountState(address)
+            .then(function (resp) {
+                console.log('response', resp);
+                var nas = Unit.fromBasic(resp.balance, "nas").toNumber();
+            })
+            .catch(function (e) {
+                // this catches e thrown by nebulas.js!neb
+                console.log(e);
+            });
+        }
+
+        // function getVoteRecord() {
+        //     neb.api
+        //         .call({
+        //             from: params.from,
+        //             to: params.to,
+        //             value: params.value,
+        //             nonce: params.nonce,
+        //             gasPrice: params.gasPrice,
+        //             gasLimit: params.gasLimit,
+        //             contract: params.contract
+        //         })
+        //         .then(function (resp) {
+        //             $("#call_test_result").text(JSON.stringify(resp));
+
+        //             if (resp.execute_err && resp.execute_err !== "") {
+        //                 $("#call").attr("disabled", true);
+        //                 $("#call_result").text("");
+        //                 $(".next").removeClass("active1");
+        //             } else {
+        //                 $("#call").attr("disabled", false);
+        //                 $("#call_result").text("");
+        //                 $(".next").removeClass("active1");
+        //             }
+        //         })
+        //         .catch(function (err) {
+        //             $("#call_test_result").text(JSON.stringify(err));
+        //             $("#call").attr("disabled", true);
+        //             $("#call_result").text("");
+        //             $(".next").removeClass("active1");
+        //         });
+        // }
+    </script>
+</body>
+
+</html>
