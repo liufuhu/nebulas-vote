@@ -103,6 +103,9 @@ body {
   color: #19ACF7;
 }
 .nav-container .item a{
+  display: block;
+  height: 100%;
+  width: 100%;
   font-size: 18px;
   color: #333;
   text-decoration: none;
