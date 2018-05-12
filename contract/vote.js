@@ -1,13 +1,36 @@
 'use strict';
 
+var QuestionContent = function (text) {
+  if (text) {
+    var o = JSON.parse(text);
+    this.id = o.id;
+    this.description = o.description;
+    this.answers = o.answers;
+    this.creator = o.creator;
+    this.startBlockHeight = new BigNumber(o.startBlockHeight);
+    this.endBlockHeight = new BigNumber(o.endBlockHeight);
+  } else {
+    this.id = '';
+    this.description = '';
+    this.answers = '';
+    this.creator = '';
+    this.startBlockHeight = -1;
+    this.endBlockHeight = -1;
+  }
+};
+
+QuestionContent.prototype = {
+  toString: function () {
+    return JSON.stringify(this);
+  }
+};
+
 var VoteContent = function (text) {
   if (text) {
     var o = JSON.parse(text);
     this.choice = new BigNumber(o.choice);
-    this.description = o.description;
   } else {
     this.choice = new BigNumber(-1);
-    this.description = '';
   }
 };
 
@@ -17,69 +40,158 @@ VoteContent.prototype = {
   }
 };
 
-var VoteContract = function () {
-  LocalContractStorage.defineMapProperty(this, "voteMp", {
-    parse: function (text) {
-      return new VoteContent(text);
-    },
-    stringify: function (o) {
-      return o.toString();
-    }
-  });
+var questionSplitFlag = '##*@#*';
+var idDescriptionSplitFlag = '&$@@&';
+var answersSplitFlag = '**@@*#';
 
-  LocalContractStorage.defineProperties(this, {
-    startBlockHeight: -1,
-    endBlockHeight: -1
-  });
+var VoteContract = function () {
+  LocalContractStorage.defineMapProperties(this, {
+    voteMap: {
+      parse: function (text) {
+        return new VoteContent(text);
+      },
+      stringify: function (o) {
+        return o.toString();
+      }
+    },
+    questionMap: {
+      parse: function (text) {
+        return new QuestionContent(text);
+      },
+      stringify: function (o) {
+        return o.toString();
+      }
+    },
+    creatorMap: null,
+    userVotedMap: null,
+    questionVotedMap: null,
+  })
 };
 
 
 // save vote to contract, one user can only vote once
 VoteContract.prototype = {
-  init: function (start, end) {
+  init: function () {
     // 千万不要 this.endBlockHeight = new BigNumber(end)  这样无效..
-    this.startBlockHeight = start;
-    this.endBlockHeight = end;
   },
-  vote: function (choice, description) {
+  // 创建题目
+  create: function (description, answers, start, end) {
+    var from = Blockchain.transaction.from;
+    var timestamp = Blockchain.transaction.timestamp;
+    var bk_height = new BigNumber(Blockchain.block.height);
+    start = new BigNumber(start);
+    end = new BigNumber(end);
+    if (bk_height.gt(end)) {
+      throw new Error("the vote end time is smaller than now");
+    }
+    var question = new QuestionContent();
+    question.description = description;
+    question.answers = answers;
+    question.creator = from;
+    question.startBlockHeight = start;
+    question.endBlockHeight = end;
+    question.id = from + '' + timestamp;
+    this.questionMap.set(question.id, question);
+
+    var creatorQuestionIds = this.creatorMap.get(from);
+    var idDes = [question.id,question.description].join(idDescriptionSplitFlag);
+    if (!creatorQuestionIds) {
+      creatorQuestionIds = idDes;
+    } else {
+      var list = creatorQuestionIds.split(questionSplitFlag);
+      list.push(idDes);
+      creatorQuestionIds = list.join(questionSplitFlag);
+    }
+    this.creatorMap.set(from, creatorQuestionIds);
+
+    console.log('created vote is ' + JSON.stringify(question));
+    console.log('creator created vote is ' + JSON.stringify(creatorQuestionIds));
+
+    return question;
+  },
+  getCreatorQuestions: function() {
+    var from = Blockchain.transaction.from;
+    // return this.creatorMap.get(from);
+    var questions = this.creatorMap.get(from);
+    console.log('creator created vote is ' + JSON.stringify(questions));
+    return questions;
+  },
+  getQuestion: function(id) {
+    return this.questionMap.get(id);
+  },
+  vote: function (qid, choice) {
     var from = Blockchain.transaction.from;
     var bk_height = new BigNumber(Blockchain.block.height);
-    var originStart = new BigNumber(-1);
-    var originEnd = new BigNumber(-1);
-    choice = choice + "";
-    choice = choice.trim();
-    description = description.trim();
-
-    if (originStart.eq(this.startBlockHeight) || originEnd.eq(this.endBlockHeight)) {
-      throw new Error("vote has not set start end time");
+    var question = this.questionMap.get(qid);
+    var userOptId = from + '' + qid; 
+    choice = parseInt(choice);
+    
+    if (!question) {
+      throw new Error("no such vote");
     }
-    if (bk_height.lt(this.startBlockHeight)) {
+    var answers = (question.answers||'').split(answersSplitFlag);
+    if (choice < 0 || answers.length < choice+1) {
+      throw new Error("no such choice");
+    }
+    if (bk_height.lt(question.startBlockHeight)) {
       throw new Error("vote has not start.");
     }
-    if (bk_height.gt(this.endBlockHeight)) {
+    if (bk_height.gt(question.endBlockHeight)) {
       throw new Error("vote is end.");
     }
-    if (choice === "" || description === ""){
-        throw new Error("empty choice / description");
-    }
-    if (choice.length > 64 || description.length > 64){
-        throw new Error("choice / description exceed limit length")
-    }
 
-    var historyVote = this.voteMp.get(from);
+    var historyVote = this.voteMap.get(userOptId);
     if (historyVote) {
       throw new Error("has voted before.");
     }
 
+    // 用户和题目组成一个维度
     var vote = new VoteContent();
     vote.choice = choice;
-    vote.description = description;
+    this.voteMap.put(userOptId, vote);
 
-    this.voteMp.put(from, vote);
+    // 用户维度的投票统计
+    var voted = this.userVotedMap.get(from);
+    var newVoted = [qid, question.description].join(idDescriptionSplitFlag);
+    if (!voted) {
+      voted = newVoted;
+    } else {
+      var votedArr = voted.split(questionSplitFlag);
+      votedArr.push(newVoted);
+      voted = votedArr.join(questionSplitFlag);
+    }
+    this.userVotedMap.put(from, voted);
+
+    // 题目维度的投票统计
+    var questionVoted = this.questionVotedMap.get(qid);
+    var choiceInt = parseInt(choice);
+    var voteCountArr;
+    if (!questionVoted) {
+      voteCountArr = [];
+      for (var i=0; i<answers.length; i++) {
+        if (i == choiceInt) {
+          voteCountArr.push(1);
+        } else {
+          voteCountArr.push(0);
+        }
+      }
+    } else {
+      var voteCountArr = questionVoted.split(answersSplitFlag);
+      voteCountArr[choiceInt] = voteCountArr[choiceInt]*1+1;
+    }
+    this.questionVotedMap.put(qid, voteCountArr.join(answersSplitFlag));
   },
-  get: function () {
+  getQuestionVoteInfo: function (qid) {
+    return this.questionVotedMap.get(qid);
+  },
+  getUserQuestionVoteInfo: function (qid) {
     var from = Blockchain.transaction.from;
-    return this.voteMp.get(from);
+    var userOptId = from + '' + qid; 
+    return this.voteMap.get(userOptId);
+  },
+  getUserVoteInfo: function () {
+    var from = Blockchain.transaction.from;
+    return this.userVotedMap.get(from);
   }
 };
 module.exports = VoteContract;

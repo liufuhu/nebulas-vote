@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>我的投票</title>
+    <link rel="shortcut icon" href="http://7xt5qt.com1.z0.glb.clouddn.com/favicon.ico">
+    <!-- <link href="./lib/voteStyle.css" rel="stylesheet"> -->
+    <link href="http://7xt5qt.com1.z0.glb.clouddn.com/voteStyle.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .answer-list {
+            margin: 0;
+        }
+        .answer-list li{
+            margin-bottom: 15px;
+        }
+        .answer-list li .right-pos {
+            margin-left: 10px;
+        }
+        .choice, .description, .start, .end {
+            width: 300px;
+        }
+        .my-create-list li, .my-join-list li {
+            font-size: 18px;
+            height: 34px;
+            line-height: 34px;
+            list-style: decimal;
+            margin-left: 10px;
+        }
+        .my-create-list .empty, .my-join-list .empty {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-top-wrap">
+        <ul class="nav-container f-cb">
+            <li class="f-fl logos">
+                <a href="./index.html">
+                    <img class="logo-nebula" src="http://7xt5qt.com1.z0.glb.clouddn.com/vote-logo.png" alt="" />
+                </a>
+            </li>
+            <li class="f-fl item"><a href="./index.html">首页</a></li>
+            <li class="f-fl item"><a href="./help.html">使用说明</a></li>
+            <li class="f-fr item active"><a href="./myvote.html">我的投票</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="my-create">
+            <h3><legend>我发起的投票</legend></h3>
+            <ul class="my-create-list j-mycreatelist">
+            </ul>
+            <button class="btn btn-primary j-newVote hide">发起投票</button>
+            <div class="create hide j-createVoteFrom" style="margin-left: 20px;">
+                <legend>新的投票</legend>
+                <div class="form-horizontal">
+                    <div class="control-group">
+                        <label class="control-label" for="inputDescription">描述</label>
+                        <div class="controls">
+                            <input type="text" id="inputDescription"  class="j-description description" placeholder="描述">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">选项</label>
+                        <div class="controls">
+                            <ul class="answer-list j-choicelist">
+                                <li>
+                                    <input type="text" class="j-choice choice" placeholder="选项">
+                                    <button class="btn btn-info right-pos j-addChoice">添加</button>
+                                </li>
+                                <li>
+                                    <input type="text" class="j-choice choice" placeholder="选项">
+                                    <button class="btn btn-warning right-pos j-removeChoice">删除</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="inputBlockStartHeight">投票开始区块高度</label>
+                        <div class="controls">
+                            <input type="text" id="inputBlockStartHeight"  class="j-startHeight start" placeholder="开始区块高度">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="inputBlockEndHeight">投票结束区块高度</label>
+                        <div class="controls">
+                            <input type="text" id="inputBlockEndHeight"  class="j-endHeight end" placeholder="结束区块高度">
+                        </div>
+                        <p style="margin-left: 180px; margin-top: 10px; color: #444;">可以在 <a href="https://explorer.nebulas.io">https://explorer.nebulas.io</a> 查看当前区块高度，每隔15s新建一个区块</p>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <button type="submit" class="btn btn-primary j-createVote">创建</button>
+                            <button type="submit" class="btn btn-warning j-cancelCreateVote" style="margin-left: 20px;">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="my-join" style="margin-top: 50px;">
+            <h3><legend>我参与的投票</legend></h3>
+            <ul class="my-join-list j-myjoinlist">
+                
+            </ul>
+        </div>
+    </div>
+    <div class="noExtension hide" id="noExtension">
+        <div class="tip-content">
+            <h2>提示</h2>
+            <p class="detail">为保证APP正常使用，请安装 <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a></p>
+        </div>
+    </div>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="http://7xt5qt.com1.z0.glb.clouddn.com/nebPay.js"></script>
+    <!-- <script src="http://7xt5qt.com1.z0.glb.clouddn.com/nebulas.js"></script> -->
+    <!-- <script src=lib/voteUtil.js></script> -->
+    <script src="http://7xt5qt.com1.z0.glb.clouddn.com/voteUtil.js"></script>
+    <script>
+        var NebPay = require("nebpay");     //https://github.com/nebulasio/nebPay
+        var nebPay = new NebPay();
+
+        setTimeout(function() {
+            if(typeof(webExtensionWallet) === "undefined"){
+                $("#noExtension").removeClass("hide")
+            }
+        }, 1000);
+
+        
+        getMyCreateVote();
+        function getMyCreateVote() {
+            util.showLoading();
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "getCreatorQuestions";
+            var callArgs = "[]"; 
+            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+                listener: function(resp) {
+                    util.hideLoading();
+                    $('.j-newVote').removeClass('hide');
+                    var result = resp.result
+                    console.log("return of my create vote: " + JSON.stringify(result))
+                    if (result === 'null'){
+                        var _emptyHtml = '<p class="empty text-warning">还没发起过投票</p>';
+                        $('.j-mycreatelist').html(_emptyHtml);
+                    } else {
+                        try {
+                            result = JSON.parse(result);
+                            if (!result) {
+                                var _emptyHtml = '<p class="empty text-warning">还没发起过投票</p>';
+                                $('.j-mycreatelist').html(_emptyHtml)
+                            } else {
+                                var returnResult = result.split(util.questionSplitFlag);
+                                var _htmlStr = '';
+                                for (var i=0; i<returnResult.length; i++) {
+                                    var question = returnResult[i].split(util.idDescriptionSplitFlag);
+                                    _htmlStr += '<li><a href="./vote.html?id=' + question[0] + '">' + question[1] + '</a></li>';
+                                }
+                                $('.j-mycreatelist').html(_htmlStr);
+                            }
+                        } catch (err) {
+                            // alert("已经提交过")
+                        }
+                    }
+                }
+            });
+        }
+
+        getMyTakePartVote();
+        function getMyTakePartVote() {
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "getUserVoteInfo";
+            var callArgs = "[]"; 
+            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+                listener: function(resp) {
+                    var result = resp.result
+                    console.log("return of my takepart vote: " + JSON.stringify(result))
+                    if (result === 'null'){
+                        var _emptyHtml = '<p class="empty text-warning">还没参与过投票</p>';
+                        $('.j-myjoinlist').html(_emptyHtml)
+                    } else {
+                        try {
+                            result = JSON.parse(result); 
+                            if (!result) {
+                                var _emptyHtml = '<p class="empty text-warning">还没参与过投票</p>';
+                                $('.j-myjoinlist').html(_emptyHtml)
+                            } else {
+                                var returnResult = result.split(util.questionSplitFlag);
+                                var _htmlStr = '';
+                                for (var i=0; i<returnResult.length; i++) {
+                                    var question = returnResult[i].split(util.idDescriptionSplitFlag);
+                                    _htmlStr += '<li><a href="./vote.html?id=' + question[0] + '">' + question[1] + '</a></li>';
+                                }
+                                $('.j-myjoinlist').html(_htmlStr)
+                            } 
+                        } catch (err) {
+                            // alert("已经提交过")
+                        }
+                    }
+                }
+            });
+        }
+
+        // 新的投票
+        $(".j-newVote").click(function() {
+            $(".j-newVote").hide();
+            $(".j-createVoteFrom").removeClass('hide');
+        })
+
+        // 添加选项
+        $('.j-addChoice').click(function(e) {
+            var _htmlStr = '<li><input type="text" class="j-choice choice" placeholder="选项"><button class="btn btn-warning right-pos j-removeChoice">删除</button></li>';
+            // $(_htmlStr).appendTo($('.j-choicelist'));
+            $('.j-choicelist').append(_htmlStr);
+            
+            // 删除选项
+            $('.j-removeChoice').click(function(e) {
+                var target = e.currentTarget;
+                $(target).parent().remove();
+            });
+        });
+
+        // 删除选项
+        $('.j-removeChoice').click(function(e) {
+            var target = e.currentTarget;
+            $(target).parent().remove();
+        });
+
+        // 创建投票
+        $('.j-createVote').click(function() {
+            var description = $('.j-description').val();
+            if (!description) {
+                alert('请输入描述');
+                return;
+            }
+            var answer = [];
+            for (var i=0; i<$('.j-choice').length; i++) {
+                var val = $('.j-choice').eq(i).val();
+                val = val.replace(/^\s*|\s*^/g, '');
+                if (!val) {
+                    alert('第'+(i+1)+'个选项内容为空');
+                    return;
+                }
+                answer.push(val);
+            }
+            if (answer.length <= 1) {
+                alert('至少要有两个可选项内容');
+                return;
+            }
+            var answers = answer.join(util.answersSplitFlag);
+            var startHeight = $('.j-startHeight').val();
+            if (!startHeight) {
+                alert('请填写开始区块高度');
+                return;
+            }
+            if (!/\d+/.test(startHeight)) {
+                alert('开始区块高度要为数字');
+                return;
+            }
+            var endHeight = $('.j-endHeight').val();
+            if (!endHeight) {
+                alert('请填写结束区块高度');
+                return;
+            }
+            if (!/\d+/.test(endHeight)) {
+                alert('结束区块高度要为数字');
+                return;
+            }
+            if (endHeight - startHeight <=0) {
+                alert('结束区块高度要大于开始区块高度');
+                return;
+            }
+            
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "create";
+            var callArgs = "[\"" + description + "\", \"" + answers + "\", \"" + startHeight + "\", \"" + endHeight + "\"]"; 
+            console.log('callArgs: ', callArgs);
+            nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
+                listener: function() { //指定回调函数
+                    util.showLoading({tip: '区块同步需要15秒左右，耐心等待'});
+                    setTimeout(function(){
+                        location.reload();
+                    }, 15000)
+                }
+            });
+        });
+
+        // 取消
+        $('.j-cancelCreateVote').click(function() {
+            $(".j-newVote").show();
+            $(".j-createVoteFrom").addClass('hide');
+        });
+    </script>
+</body>
+
+</html>

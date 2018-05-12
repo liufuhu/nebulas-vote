@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>使用说明</title>
+    <link href="https://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="./lib/voteStyle.css" rel="stylesheet"> -->
+    <link href="http://7xt5qt.com1.z0.glb.clouddn.com/voteStyle.css" rel="stylesheet">
+    <style>
+        .help dl {
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+        .help dl dt{
+            line-height: 1.8;
+            color: #222;
+            font-weight: normal;
+        }
+        .help dl dd{
+            line-height: 1.6;
+            color: #444;
+            margin-left: 20px;
+            font-size: 14px;
+        }
+        .help dl em{
+            font-weight: normal;
+            color: #274ae2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-top-wrap">
+        <ul class="nav-container f-cb">
+            <li class="f-fl logos">
+                <a href="./index.html">
+                    <img class="logo-nebula" src="http://7xt5qt.com1.z0.glb.clouddn.com/vote-logo.png" alt="" />
+                </a>
+            </li>
+            <li class="f-fl item"><a href="./index.html">首页</a></li>
+            <li class="f-fl item active"><a href="./help.html">使用说明</a></li>
+            <li class="f-fr item"><a href="./myvote.html">我的投票</a></li>
+        </ul>
+    </div>
+    <div class="container help">
+        <dl>
+            <dt>1. 需要提前准备什么？</dt>
+            <dd>为正常使用网站提供的功能，请使用chrome浏览器，并且安装插件 <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a>。</dd>
+            <dd><a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a> 是星云链官方指定的chrome插件，通过它可以方便我们转账、调用智能合约。</dd>
+        </dl>
+        <dl>
+            <dt>2. 基本使用方法是什么？</dt>
+            <dd>在导航栏里，点击 <em>我的投票</em>，可以看到 <em>我发起的投票</em> 和 <em>我参与的投票</em>。</dd>
+            <dd>在 <em>我发起的投票</em> 里可以看到发起的投票以及发起新的投票。</dd>
+            <dd>在 <em>我参与的投票</em> 里可以看到我参与过的投票。</dd>
+        </dl>
+        <dl>
+            <dt>3. 怎么发起新的投票？</dt>
+            <dd>在我的投票里，点击发起投票按钮。</dd>
+            <dd>发起新的投票时，需要填写描述信息、投票的选项、投票生效开始的区块高度和投票停止的区块高度。</dd>
+            <dd>区块的高度可以在星云链浏览器 <a href="https://explorer.nebulas.io">https://explorer.nebulas.io</a> 中查看，每隔15s会产生一个新的区块。</dd>
+        </dl>
+        <dl>
+            <dt>4. 发起新的投票时，区块高度怎么设置？</dt>
+            <dd>区块的高度可以在星云链浏览器 <a href="https://explorer.nebulas.io">https://explorer.nebulas.io</a> 中查看，每隔15s会产生一个新的区块</dd>
+            <dd>笔者写文档时的时间是：2018-05-12 09:45:00，区块高度为：247327。 </dd>
+            <dd>假设我想创建一个投票，开始时间为2018-05-12 10:00:00，结束时间为2081-05-12 11:00:00。</dd>
+            <dd>那么开始区块高度为：900/15+247327=247387。900是开始时间(10点)距离当前时间(9点45)的秒数。</dd>
+            <dd>那么结束区块高度为：3600/15+247387=247627。一小时3600s，每15秒产生一个区块，以此计算。</dd>
+        </dl>
+        <dl>
+            <dt>5. 如何参见投票？</dt>
+            <dd>需要通过发起者分享的链接才能进行投票。</dd>
+        </dl>
+        <dl>
+            <dt>6. 现在投票只支持单选吗？</dt>
+            <dd>是的。</dd>
+        </dl>
+        <dl>
+            <dt>7. 发起投票和参加投票需要消耗NAS吗？</dt>
+            <dd>只需消耗很少的NAS作为gas，大约0.00001NAS。</dd>
+        </dl>
+        <dl>
+            <dt>8. 通过插件切账号后，返回结果不对？</dt>
+            <dd>这是由于缓存造成的，需要多刷新几遍，或者复制链接打开新的页面。</dd>
+        </dl>
+        <blockquote style="margin-top: 50px;">
+            <p>未来已来，只是尚未流行</p>
+            <small>威廉·吉布森</small>
+        </blockquote>
+    </div>
+</body>
+
+</html>

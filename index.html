@@ -4,214 +4,104 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-    <title>投票</title>
+    <title>区块链投票系统</title>
+    <link rel="shortcut icon" href="http://7xt5qt.com1.z0.glb.clouddn.com/favicon.ico">
     <link href="https://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="./lib/voteStyle.css" rel="stylesheet"> -->
+    <link href="http://7xt5qt.com1.z0.glb.clouddn.com/voteStyle.css" rel="stylesheet">
     <style>
-        .logo {
-            margin-top: 10px;
+        .nav-top-wrap {
+            margin-bottom: 0;
         }
-        .logo img {
-            width: 120px;
-            margin-right: 20px;
+        .page-1 {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            background: #444;
         }
-        .name {
-            margin-top: 40px;
+        .page-1 .slogn {
+            width: 700px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
         }
-        .tip {
-            margin-top: 10px;
+        .page-2 {
+            padding: 50px 0;
+        }
+        .vs-table {
+            font-size: 16px;
+        }
+        .vs-table caption {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .vs-table caption em {
+            font-size: 40px;
+            font-style: normal;
+            color: #e03a3a;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="logo">
-            <div class="img logo_rotate">
-                <img src="img/nebula-logo.png" alt="">
-                <img src="img/logo.png" alt="">
-            </div>
+    <div class="nav-top-wrap">
+        <ul class="nav-container f-cb">
+            <li class="f-fl logos">
+                <a href="./index.html">
+                    <img class="logo-nebula" src="http://7xt5qt.com1.z0.glb.clouddn.com/vote-logo.png" alt="" />
+                </a>
+            </li>
+            <li class="f-fl item active"><a href="./index.html">首页</a></li>
+            <li class="f-fl item"><a href="./help.html">使用说明</a></li>
+            <li class="f-fr item"><a href="./myvote.html">我的投票</a></li>
+        </ul>
+    </div>
+    <div class="page-1">
+        <img class="slogn" src="http://7xt5qt.com1.z0.glb.clouddn.com/slogn.png" />
+    </div>
+    <div class="page-2">
+        <div class="container">
+            <table class="table table-bordered vs-table">
+                <caption>普通投票系统  <em>vs</em>  区块链投票系统</caption>
+                <!-- <thead>
+                    <tr>
+                        <th>...</th>
+                        <th>...</th>
+                    </tr>
+                </thead> -->
+                <tbody>
+                    <tr>
+                        <td>中心化存储，网站或者组织权限大，容易修改数据</td>
+                        <td>去中心化，数据无法篡改</td>
+                    </tr>
+                    <tr>
+                        <td>信息不透明，用户看到的可能是加工后的数据</td>
+                        <td>数据公开透明，任何人都可以看到全部数据</td>
+                    </tr>
+                    <tr>
+                        <td>匿名容易被作弊，不匿名容易引发参与者的不适感</td>
+                        <td>天然的匿名特性，可以考虑接入区块链身份ID标识</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <h1 class="name">投票</h1>
-        <p class="noExtension hide" id="noExtension">
-            提醒: Please install <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a>  to vote
-        </p>
-        <div>
-            <form>
-                <fieldset>
-                    <legend>请投票选举下一届总统：</legend>
-                    <div id="list"></div>
-                </fieldset>
-            </form>
-            <a href="#" class="btn btn-large btn-primary" id="submit">提交</a>
+    </div>
+    <div class="noExtension hide" id="noExtension">
+        <div class="tip-content">
+            <h2>提示</h2>
+            <p class="detail">为保证网站正常使用，请安装 <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a></p>
         </div>
-        <p class="tip text-warning hide">已经提交</p>
     </div>
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
-    <script src=lib/nebPay.js></script>
-    <script src=lib/nebulas.js></script>
     <script>
-        var NebPay = require("nebpay");     //https://github.com/nebulasio/nebPay
-        var nebPay = new NebPay();
-        var nebulas = require("nebulas"),
-            Account = nebulas.Account,
-            Utils = nebulas.Utils,
-            neb = new nebulas.Neb();
-        neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io/"));
-
-        var lists = [
-            {value: '1', description: '奥巴马'},
-            {value: '2', description: '克林顿'},
-            {value: '3', description: '特朗普'},
-        ];
-        var htmlStr = '';
-        for (var i=0; i<lists.length; i++) {
-            htmlStr += ('<label class="radio"><input type="radio" name="optionsRadios" id="optionsRadios1" class="radio-input" value="' + lists[i].value + 
-                '">' + lists[i].description + '</label>');
-        }
-        $("#list").html(htmlStr);
-
-        $(".radio-input").attr("disabled", true)
-        $("#submit").addClass("disabled");
-
-        if(typeof(webExtensionWallet) === "undefined"){
-            $("#noExtension").removeClass("hide")
-        }else{
-            $(".radio-input").attr("disabled",false);
-            $("#submit").removeClass("disabled");
-        }
-
-        var dappAddress = "n1gCQWdnnDuUjeqJ1XeqnJCkUYwjZ1w6F9N";
-
-        // 搜索功能: 查找Super-Dictionary 中有没有该词条
-        $("#submit").click(function(){
-            if ($("#submit").hasClass('disabled')) {
-                if (!$(".tip").hasClass("hide")) {
-                    alert("你已经投票")
-                }
-                return;
+        setTimeout(function() {
+            if(typeof(webExtensionWallet) === "undefined"){
+                $("#noExtension").removeClass("hide")
             }
-            var val = $('input[name="optionsRadios"]:checked').val();
-            if (val === undefined) {
-                alert('请选择');
-                return;
-            }
-            var description;
-            for (var i=0; i<lists.length; i++) {
-                if (lists[i].value == val) {
-                    description = lists[i].description;
-                }
-            }
-            var to = dappAddress;
-            var value = "0";
-            var callFunction = "vote";
-            var callArgs = "[\"" + val + "\", \"" + description + "\"]"; 
-            // nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
-            //     listener: cbSearch      //指定回调函数
-            // });
-            nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
-                listener: cbVote      //指定回调函数
-            });
-        })
-
-        //return of search,
-        function cbVote(resp) {
-            var result = resp.result
-            console.log("return of rpc call: " + JSON.stringify(result))
-            if (result === 'null'){
-            } else {
-                try {
-                    result = JSON.parse(result);  
-                } catch (err) {
-                    // alert("已经提交过")
-                }
-            }
-        }
-
-        getVoteRecord();
-        function getVoteRecord() {
-            var to = dappAddress;
-            var value = "0";
-            var callFunction = "get";
-            var callArgs = "[]";
-            
-            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
-                listener: cbGet
-            });
-
-            // nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
-            //     listener: cbGet
-            // });
-        }
-
-        function cbGet(resp) {
-            console.log(resp);
-            var result = resp.result
-            console.log("return of rpc call: " + JSON.stringify(result))
-            if (result === 'null'){
-            } else {
-                try {
-                    result = JSON.parse(result);
-                    for (var i=0; i<$('.radio-input').length; i++) {
-                        if ($('.radio-input').eq(i).val() == result.choice) {
-                            $('.radio-input').eq(i).attr('checked', true);
-                            $(".radio-input").attr("disabled",false);
-                            $("#submit").addClass("disabled");
-                            $(".tip").removeClass("hide");
-                            break;
-                        }
-                    }
-                } catch (err) {
-                    console.log(err);
-                }
-            }
-        }
-        
-        // getAccountState("n1Yf3kX9bUbUL3yef2TZxVgghtfPKPuny2B");
-        // function getAccountState(address) {
-        //     neb.api.getAccountState(address)
-        //     .then(function (resp) {
-        //         console.log('response', resp);
-        //         var nas = Unit.fromBasic(resp.balance, "nas").toNumber();
-        //     })
-        //     .catch(function (e) {
-        //         // this catches e thrown by nebulas.js!neb
-        //         console.log(e);
-        //     });
-        // }
-
-        // function getVoteRecord() {
-        //     neb.api
-        //         .call({
-        //             from: params.from,
-        //             to: params.to,
-        //             value: params.value,
-        //             nonce: params.nonce,
-        //             gasPrice: params.gasPrice,
-        //             gasLimit: params.gasLimit,
-        //             contract: params.contract
-        //         })
-        //         .then(function (resp) {
-        //             $("#call_test_result").text(JSON.stringify(resp));
-
-        //             if (resp.execute_err && resp.execute_err !== "") {
-        //                 $("#call").attr("disabled", true);
-        //                 $("#call_result").text("");
-        //                 $(".next").removeClass("active1");
-        //             } else {
-        //                 $("#call").attr("disabled", false);
-        //                 $("#call_result").text("");
-        //                 $(".next").removeClass("active1");
-        //             }
-        //         })
-        //         .catch(function (err) {
-        //             $("#call_test_result").text(JSON.stringify(err));
-        //             $("#call").attr("disabled", true);
-        //             $("#call_result").text("");
-        //             $(".next").removeClass("active1");
-        //         });
-        // }
+        }, 1000);
     </script>
 </body>
 

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>进行投票</title>
+    <link rel="shortcut icon" href="http://7xt5qt.com1.z0.glb.clouddn.com/favicon.ico">
+    <!-- <link href="./lib/voteStyle.css" rel="stylesheet"> -->
+    <link href="http://7xt5qt.com1.z0.glb.clouddn.com/voteStyle.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .name {
+            margin-top: 40px;
+        }
+        .tip {
+            margin-top: 10px;
+        }
+        .vote-percent {
+            margin-left: 20px;
+            cursor: default;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-top-wrap">
+        <ul class="nav-container f-cb">
+            <li class="f-fl logos">
+                <a href="./index.html">
+                    <img class="logo-nebula" src="http://7xt5qt.com1.z0.glb.clouddn.com/vote-logo.png" alt="" />
+                </a>
+            </li>
+            <li class="f-fl item"><a href="./index.html">首页</a></li>
+            <li class="f-fl item"><a href="./help.html">使用说明</a></li>
+            <li class="f-fl item active"><a href="./vote.html">进行投票</a></li>
+            <li class="f-fr item"><a href="./myvote.html">我的投票</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="j-votecontent hide">
+            <form>
+                <fieldset>
+                    <legend class="j-description"></legend>
+                    <div class="j-list"></div>
+                </fieldset>
+            </form>
+            <a href="#" class="btn btn-large btn-primary" id="submit">提交</a>
+        </div>
+        <p class="tip text-warning hide">你已投票</p>
+    </div>
+    <div class="noExtension hide" id="noExtension">
+        <div class="tip-content">
+            <h2>提示</h2>
+            <p class="detail">为保证APP正常使用，请安装 <a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a></p>
+        </div>
+    </div>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="http://7xt5qt.com1.z0.glb.clouddn.com/nebPay.js"></script>
+    <!-- <script src="http://7xt5qt.com1.z0.glb.clouddn.com/nebulas.js"></script> -->
+    <!-- <script src=lib/voteUtil.js></script> -->
+    <script src="http://7xt5qt.com1.z0.glb.clouddn.com/voteUtil.js"></script>
+    <script>
+        var NebPay = require("nebpay");     //https://github.com/nebulasio/nebPay
+        var nebPay = new NebPay();
+
+        var choiceVoteCountArr = [];
+        var userVotedChoice = -1;
+        var voteId;
+
+        var urlParam = util.parseUrlParam();
+        if (urlParam.id) {
+            voteId = urlParam.id;
+        } else {
+            alert('投票不和要求');
+        }
+
+        $(".radio-input").attr("disabled", true)
+        $("#submit").addClass("disabled");
+
+        setTimeout(function() {
+            if(typeof(webExtensionWallet) === "undefined"){
+                $("#noExtension").removeClass("hide")
+            }
+        }, 1000);
+     
+        
+        getVoteDetail();
+        function getVoteDetail() {
+            util.showLoading();
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "getQuestion";
+            var callArgs = "[\"" + voteId + "\"]"; 
+            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+                listener: function(resp) {
+                    $('.j-votecontent').removeClass('hide');
+                    util.hideLoading();
+                    var result = resp.result
+                    console.log("return of vote detail: " + JSON.stringify(result))
+                    if (result === 'null'){
+                        var _emptyHtml = '<p class="empty text-warning">还没发起过投票</p>';
+                        $('.j-mycreatelist').html(_emptyHtml)
+                    } else {
+                        try {
+                            result = JSON.parse(result);
+                            if (!result) {
+                                var _emptyHtml = '<p class="empty text-warning">还没发起过投票</p>';
+                                $('.j-mycreatelist').html(_emptyHtml)
+                            } else {
+                                var description = result.description;
+                                var answers = result.answers.split(util.answersSplitFlag);
+                                var _htmlStr = '';
+                                var htmlStr = '';
+                                for (var i=0; i<answers.length; i++) {
+                                    var _voteCountStr = '';
+                                    if (choiceVoteCountArr[i]) {
+                                        _voteCountStr = choiceVoteCountArr[i] + '票';
+                                    }
+                                    htmlStr += ('<label class="radio"><input type="radio" name="optionsRadios" class="radio-input" value="' + i + 
+                                        '">' + answers[i] + '<span class="j-votepercent vote-percent text-info">' +  _voteCountStr + '</span></label>');
+                                }
+                                $(".j-list").html(htmlStr);
+                                $(".j-description").html(description);
+                                
+                                if (userVotedChoice >= 0) {
+                                    for (var i=0; i<$('.radio-input').length; i++) {
+                                        if ($('.radio-input').eq(i).val() == userVotedChoice) {
+                                            $('.radio-input').eq(i).attr('checked', true);
+                                            $(".radio-input").attr("disabled",true);
+                                            $("#submit").addClass("disabled");
+                                            $(".tip").removeClass("hide");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            // alert("已经提交过")
+                        }
+                    }
+                }
+            });
+        }
+
+        getQuestionVoteRecord();
+        function getQuestionVoteRecord() {
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "getQuestionVoteInfo";
+            var callArgs = "[\"" + voteId + "\"]"; 
+            
+            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+                listener: function (resp) {
+                    console.log(resp);
+                    var result = resp.result
+                    console.log("return of question vote record: " + JSON.stringify(result))
+                    if (result === 'null'){
+                        $('.j-votepercent').hide();
+                    } else {
+                        try {
+                            result = JSON.parse(result);
+                            choiceVoteCountArr = result.split(util.answersSplitFlag);
+                            for (var i=0; i<choiceVoteCountArr.length; i++) {
+                                $(".j-votepercent").eq(i).html(choiceVoteCountArr[i]+'票');
+                            }
+                        } catch (err) {
+                            console.log(err);
+                        }
+                    }
+                }
+            });
+        }
+
+        getUserQuestionVoteRecord();
+        function getUserQuestionVoteRecord() {
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "getUserQuestionVoteInfo";
+            var callArgs = "[\"" + voteId + "\"]"; 
+            
+            nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的call接口去调用合约,
+                listener: function (resp) {
+                    var result = resp.result
+                    console.log("return of user question vote record: " + JSON.stringify(result))
+                    if (result === 'null'){
+                    } else {
+                        try {
+                            result = JSON.parse(result);
+                            userVotedChoice = result.choice;
+                            for (var i=0; i<$('.radio-input').length; i++) {
+                                if ($('.radio-input').eq(i).val() == userVotedChoice) {
+                                    $('.radio-input').eq(i).attr('checked', true);
+                                    $(".radio-input").attr("disabled", true);
+                                    $("#submit").addClass("disabled");
+                                    $(".tip").removeClass("hide");
+                                    break;
+                                }
+                            }
+                        } catch (err) {
+                            console.log(err);
+                        }
+                    }
+                }
+            });
+        }
+
+
+        // 搜索功能: 查找Super-Dictionary 中有没有该词条
+        $("#submit").click(function(){
+            if ($("#submit").hasClass('disabled')) {
+                if (!$(".tip").hasClass("hide")) {
+                    alert("你已经投票")
+                }
+                return;
+            }
+            var val = $('input[name="optionsRadios"]:checked').val();
+            if (val === undefined) {
+                alert('请选择');
+                return;
+            }
+            var to = util.dappAddress;
+            var value = "0";
+            var callFunction = "vote";
+            var callArgs = "[\"" + voteId + "\", \"" + val + "\"]"; 
+            // nebPay.simulateCall(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
+            //     listener: cbSearch      //指定回调函数
+            // });
+            nebPay.call(to, value, callFunction, callArgs, {    //使用nebpay的simulateCall接口去执行get查询, 模拟执行.不发送交易,不上链
+                listener: function() { //指定回调函数
+                    util.showLoading({tip: '区块同步需要15秒左右，耐心等待'});
+                    setTimeout(function(){
+                        location.reload();
+                    }, 20000)
+                }      //指定回调函数
+            });
+        })
+
+        //return of search,
+        function cbVote(resp) {
+            var result = resp.result
+            console.log("return of rpc call: " + JSON.stringify(result))
+            if (result === 'null'){
+            } else {
+                try {
+                    result = JSON.parse(result);  
+                } catch (err) {
+                    // alert("已经提交过")
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
